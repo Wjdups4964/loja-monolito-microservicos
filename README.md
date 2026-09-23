@@ -46,11 +46,15 @@ O time de vendas quer 10% de desconto. Vocês vão "publicar" essa mudança nas 
 
 ||**Monolito**|**Microsserviços**|
 |---|---|---|
-|Quanto tempo ficou fora do ar?|||
-|O que parou de funcionar?|||
-|O que continuou funcionando?|||
+|Quanto tempo ficou fora do ar?|~10s (todo o sistema, enquanto o processo reiniciava)|~4-15s, mas só a parte que depende do Catálogo|
+|O que parou de funcionar?|Tudo — inclusive /relatorio, que não tinha nada a ver com o desconto|Só /produto/1 (precisa do preço do Catálogo)|
+|O que continuou funcionando?|Nada|/relatorio e /comprar/1, que dependem de Pedidos e Estoque, não do Catálogo|
 
 **Responda** Poder ou problema dos microsserviços? Por quê? 
+
+É um poder, mas com uma condição. Nos microsserviços, o Catálogo caiu e a loja continuou operando: quem só queria ver o relatório ou finalizar uma compra nem percebeu o problema. No monolito, como tudo é um processo só, um reinício derruba a aplicação inteira — mesmo que a mudança fosse só no módulo de Catálogo, ninguém conseguia acessar nada, nem função que não tinha relação com o desconto.
+
+Essa independência de deploy é justamente a promessa central dos microsserviços: cada serviço pode subir, cair ou ser atualizado sem tirar o sistema inteiro do ar. O preço que se paga por isso é complexidade — agora existem 4 processos, 4 portas e a necessidade de cada serviço saber lidar com a possibilidade de outro estar fora do ar (é o que a Vitrine faz ao tratar Indisponivel e mostrar "estoque desconhecido" em vez de quebrar).
 
 ### **Experimento 2 · Latência** 
 
@@ -62,10 +66,14 @@ O time de vendas quer 10% de desconto. Vocês vão "publicar" essa mudança nas 
 
 ||**Monolito**|**Microsserviços**|
 |---|---|---|
-|Tempo médio por página (comparar.py)|||
-|tempo_interno_ms|||
+|Tempo médio por página (comparar.py)|11.36 ms|19.64 ms|
+|tempo_interno_ms|0.011|42.086|
 
 **Responda** Aqui tudo roda no mesmo computador. O que aconteceria com essa diferença se cada serviço estivesse numa máquina diferente? 
+
+A diferença de latência ficaria bem maior. Aqui, os 19,64 ms extras dos microsserviços vêm quase só do custo de processar duas chamadas HTTP localmente (na mesma máquina, sem atraso real de rede). Se Catálogo, Estoque, Pedidos e Vitrine estivessem em máquinas diferentes — em datacenters distintos, por exemplo —, cada uma dessas chamadas passaria a sofrer latência real de rede (alguns milissegundos a dezenas de milissegundos por salto, dependendo da distância e da infraestrutura), além do risco de perda de pacotes e variação de latência (jitter).
+
+Como a Vitrine faz 2 saltos de rede para montar /produto/1 (Catálogo e Estoque), esse custo se multiplicaria a cada chamada. Num monolito, como tudo é uma chamada de função dentro do mesmo processo, esse custo não existe — a "comunicação" é só acesso à memória. É por isso que arquiteturas de microsserviços em produção real costumam investir em: reduzir o número de saltos por requisição, usar cache, processar em paralelo o que não depende um do outro, e posicionar serviços que se comunicam muito na mesma região/rede.
 
 ### - **Experimento 3 · Consistência** 
 
@@ -77,15 +85,19 @@ Na demonstração, o professor derrubou o Estoque e a loja em microsserviços **
 
 |**/relatorio (microsserviços)**|**Antes**|**Depois**|
 |---|---|---|
-|pedidos_confirmados|||
-|pedidos_pendentes|||
-|baixas_de_estoque|||
-|consistente|||
+|pedidos_confirmados|5|5|
+|pedidos_pendentes|3|5|
+|baixas_de_estoque|5|5|
+|consistente|false|false|
 
 
 **Faça** Abra a pasta dados/. Compare pedidos.json e estoque.json: cada banco conta uma história diferente. 
 
 **Responda** No monolito, o bug do Estoque derrubou a loja inteira: nenhuma venda, mas nenhum dado errado. Nos microsserviços, a loja vendeu, mas os bancos discordam. **Qual dos dois a loja prefere? Quem decide isso?** 
+
+Não existe resposta técnica certa — é uma decisão de negócio. O monolito escolhe consistência: prefere não vender a vender errado, porque estoque e pedido moram na mesma transação. Os microsserviços, como implementados aqui, escolhem disponibilidade: prioridade é não perder a venda, mesmo que isso signifique reconciliar os dados depois (ou até vender um produto que já tinha acabado o estoque).
+
+Essa é a essência do trade-off descrito no teorema CAP: com uma falha de rede/serviço, você não pode ter os dois ao mesmo tempo — precisa escolher entre Consistência e Disponibilidade. Quem decide isso não é o time técnico sozinho, é o negócio: para um e-commerce concorrido, perder uma venda pode custar mais caro do que lidar depois com uma reconciliação manual de estoque; já para um sistema financeiro (transferência bancária, por exemplo), vender "errado" é inaceitável, então vale a pena tirar o sistema do ar antes de arriscar inconsistência. A arquitetura de microsserviços aqui só torna essa escolha explícita — o código de pedidos.py até comenta isso: "Decisão de negócio: não perder a venda."
 
 ### **Experimento 4 · Operação** 
 
@@ -96,11 +108,10 @@ Na demonstração, o professor derrubou o Estoque e a loja em microsserviços **
 
 
 
-|Quantos processos estão rodando?|
-|---|
-|Quantas portas?|
-|Quantos arquivos de banco?|
-|Quantas linhas de log apareceram?|
+|Quantos processos estão rodando?|1|4 (Catálogo, Estoque, Pedidos, Vitrine)|
+|Quantas portas?|1 (8000)|4 (9000, 9001, 9002, 9003)|
+|Quantos arquivos de banco?|1 (monolito.json)|2 (estoque.json, pedidos.json)|
+|Quantas linhas de log apareceram?|||
 |Em quantos serviços?|
 
 

@@ -1,0 +1,34 @@
+{
+  "estoque": {
+    "1": 5,
+    "2": 3,
+    "3": 3
+  },
+  "baixas": 4,
+  "pedidos": [
+    {
+      "numero": 1,
+      "produto": "Mouse sem fio",
+      "valor": 81.0,
+      "status": "confirmado"
+    },
+    {
+      "numero": 2,
+      "produto": "Monitor 24 pol",
+      "valor": 810.0,
+      "status": "confirmado"
+    },
+    {
+      "numero": 3,
+      "produto": "Monitor 24 pol",
+      "valor": 810.0,
+      "status": "confirmado"
+    },
+    {
+      "numero": 4,
+      "produto": "Mouse sem fio",
+      "valor": 81.0,
+      "status": "confirmado"
+    }
+  ]
+}

@@ -1,0 +1,22 @@
+{
+  "pedidos": [
+    {
+      "numero": 1,
+      "produto": "Monitor 24 pol",
+      "valor": 810.0,
+      "status": "confirmado"
+    },
+    {
+      "numero": 2,
+      "produto": "Monitor 24 pol",
+      "valor": 810.0,
+      "status": "confirmado"
+    },
+    {
+      "numero": 3,
+      "produto": "Mouse sem fio",
+      "valor": 81.0,
+      "status": "confirmado"
+    }
+  ]
+}

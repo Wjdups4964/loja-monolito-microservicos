@@ -7,8 +7,8 @@ Rota:
 """
 from base import servir
 
-DESCONTO = 0         # % de desconto em todos os produtos (experimento 1)
-TEMPO_DE_SUBIDA = 4  # simulado
+DESCONTO = 10         # % de desconto em todos os produtos (experimento 1)
+TEMPO_DE_SUBIDA = 15  # simulado
 
 PRODUTOS = {"1": ("Teclado mecânico", 250.0), "2": ("Mouse sem fio", 90.0), "3": ("Monitor 24 pol", 900.0)}
 

@@ -13,7 +13,7 @@ import time
 
 from base import Banco, cair_em_breve, servir
 
-DESCONTO = 0         # % de desconto em todos os produtos (experimento 1)
+DESCONTO = 10       # % de desconto em todos os produtos (experimento 1)
 TEMPO_DE_SUBIDA = 10  # simulado: o monolito carrega todos os módulos ao subir
 
 banco = Banco("monolito.json", {"estoque": {"1": 5, "2": 5, "3": 5}, "baixas": 0, "pedidos": []})
